@@ -9,7 +9,6 @@ import copy
 import threading
 
 # ======================== НАСТРОЙКИ ========================
-TOKEN = "123"
 DATA_FILE = "data.json"
 CURRENCY = "🪙"
 CURRENCY_NAME = "чирукойны"
