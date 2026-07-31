@@ -76,7 +76,6 @@ async def on_app_error(interaction: discord.Interaction, error: app_commands.App
     except Exception:
         pass
 
-
 if __name__ == "__main__":
     print("🚀 Запуск Yachiru...")
-    bot.run("СЮДА_ВСТАВЬ_НОВЫЙ_ТОКЕН")
+    bot.run(os.getenv("BOT_TOKEN"))
