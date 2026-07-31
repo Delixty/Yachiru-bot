@@ -9,6 +9,7 @@ import copy
 import threading
 
 # ======================== НАСТРОЙКИ ========================
+os.getenv("BOT_TOKEN")
 DATA_FILE = "data.json"
 CURRENCY = "🪙"
 CURRENCY_NAME = "чирукойны"
