@@ -9,9 +9,10 @@ import copy
 import threading
 
 # ======================== НАСТРОЙКИ ========================
-TOKEN = "token"
+TOKEN = "123"
 DATA_FILE = "data.json"
 CURRENCY = "🪙"
+CURRENCY_NAME = "чирукойны"
 
 COOLDOWNS = {
     "work": 3600,
@@ -185,7 +186,14 @@ def cd(sec):
 
 
 def ach_text(new_ach):
-    return "\n".join(f"{a.get('icon', '🏆')} **{a['name']}** — +{fmt(a['reward'])} {CURRENCY}" for a in new_ach)
+    """Красивое оформление новых достижений — каждая строчка отдельно, без слипания."""
+    parts = []
+    for a in new_ach:
+        parts.append(
+            f"{a.get('icon', '🏆')} **{a['name']}**\n"
+            f"└ {a['desc']} — награда **+{fmt(a['reward'])} {CURRENCY}**"
+        )
+    return "\n\n".join(parts)
 
 
 def get_bonus_percent(ud):
