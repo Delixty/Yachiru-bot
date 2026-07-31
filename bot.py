@@ -78,8 +78,5 @@ async def on_app_error(interaction: discord.Interaction, error: app_commands.App
 
 
 if __name__ == "__main__":
-    if core.TOKEN == "ВСТАВЬ_СВОЙ_ТОКЕН_СЮДА":
-        print("❌ Вставь токен бота в файл core.py (переменная TOKEN)!")
-    else:
-        print("🚀 Запуск Yachiru...")
-        bot.run(core.TOKEN)
+    print("🚀 Запуск Yachiru...")
+    bot.run("СЮДА_ВСТАВЬ_НОВЫЙ_ТОКЕН")
