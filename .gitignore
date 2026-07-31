@@ -1,0 +1,23 @@
+# Конфиденциальное
+.env
+
+# Данные бота (создаются автоматически)
+data.json
+data.json.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Логи
+*.log
