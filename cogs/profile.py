@@ -24,15 +24,10 @@ class Profile(commands.Cog):
     async def balance(self, inter: discord.Interaction, user: discord.Member = None):
         t = user or inter.user
         ud = core.get_user(str(t.id))
-        avail, _ = core.passive_income(ud)
         e = discord.Embed(title=f"💰 Баланс — {t.display_name}", color=discord.Color.gold())
         e.set_thumbnail(url=t.display_avatar.url)
-        e.add_field(name="👛 Кошелёк", value=f"**{core.fmt(ud['wallet'])}** {core.CURRENCY}", inline=True)
+        e.add_field(name="👛 Наличные", value=f"**{core.fmt(ud['wallet'])}** {core.CURRENCY}", inline=True)
         e.add_field(name="🏦 Банк", value=f"**{core.fmt(ud['bank'])}** {core.CURRENCY}", inline=True)
-        e.add_field(name="💵 Всего", value=f"**{core.fmt(core.net_worth(ud))}** {core.CURRENCY}", inline=True)
-        e.add_field(name="📈 Бонус к работе", value=f"+{core.get_bonus_percent(ud)}%", inline=True)
-        e.add_field(name="🏦 Накопилось дохода", value=f"{core.fmt(avail)} {core.CURRENCY}", inline=True)
-        e.add_field(name="🎁 Предметов", value=f"{len(ud['items']) + sum(ud.get('consumables', {}).values())}", inline=True)
         await inter.response.send_message(embed=e)
 
     # ---------- /profile ----------
@@ -48,7 +43,6 @@ class Profile(commands.Cog):
         e.add_field(name="💵 Капитал", value=f"**{core.fmt(core.net_worth(ud))}** {core.CURRENCY}", inline=True)
         e.add_field(name="🏆 Место", value=f"**#{rank}** / {total}", inline=True)
         e.add_field(name="🎯 Достижений", value=f"**{len(ud['achievements'])}** / {len(core.ACHIEVEMENTS)}", inline=True)
-        e.add_field(name="⭐ Уровень", value=str(ud.get("level", 1)), inline=True)
         e.add_field(name="💼 Работ", value=str(s.get("work", 0)), inline=True)
         e.add_field(name="🎮 Побед", value=f"{s.get('games_won', 0)} / {s.get('games_played', 0)}", inline=True)
         e.add_field(name="🔥 Серия", value=f"{s.get('streak', 0)} (рекорд {s.get('max_streak', 0)})", inline=True)
@@ -97,27 +91,6 @@ class Profile(commands.Cog):
         e.add_field(name="Соседи по рейтингу", value="\n".join(lines) or "—", inline=False)
         await inter.response.send_message(embed=e)
 
-    # ---------- /level ----------
-    @app_commands.command(name="level", description="⭐ Твой уровень и опыт")
-    async def level(self, inter: discord.Interaction):
-        uid = str(inter.user.id)
-        ud = core.get_user(uid)
-        lvl = ud.get("level", 1)
-        xp = ud.get("xp", 0)
-        needed = lvl * 100
-        
-        pct = min(100, int((xp / needed) * 100))
-        filled = int(pct / 10)
-        bar = "█" * filled + "░" * (10 - filled)
-        
-        e = discord.Embed(title="⭐ Уровень", color=discord.Color.blue())
-        e.set_thumbnail(url=inter.user.display_avatar.url)
-        e.add_field(name="Уровень", value=f"**{lvl}**", inline=True)
-        e.add_field(name="Опыт", value=f"**{xp} / {needed} XP**", inline=True)
-        e.add_field(name="Прогресс", value=f"`{bar}` {pct}%", inline=False)
-        e.add_field(name="Бонус", value=f"+{int((lvl-1)*1.5)}% к заработку в /work", inline=False)
-        await inter.response.send_message(embed=e)
-        
     # ---------- /quest ----------
     @app_commands.command(name="quest", description="📜 Ежедневные задания")
     async def quest(self, inter: discord.Interaction):
