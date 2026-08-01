@@ -56,13 +56,7 @@ async def on_message(message: discord.Message):
     if now - ud.get("last_msg", 0) > 15:
         ud["last_msg"] = now
         core.save_user(uid, ud)
-        lvl_up = core.add_xp(uid, __import__("random").randint(3, 8))
-        if lvl_up:
-            new_ud = core.get_user(uid)
-            try:
-                await message.channel.send(f"🎉 {message.author.mention}, ты достиг **{new_ud['level']}** уровня!")
-            except Exception:
-                pass
+        core.add_xp(uid, __import__("random").randint(3, 8))
                 
     await bot.process_commands(message)
 
