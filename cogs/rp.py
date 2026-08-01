@@ -1,20 +1,28 @@
-"""cogs/rp.py — RP-команды с аниме-картинками (nekos.best API)."""
+"""cogs/rp.py — RP-команды с аниме-картинками.
+
+Источники картинок (по порядку, со сменой при сбое):
+1) waifu.pics  — https://api.waifu.pics/sfw/<категория>
+2) nekos.best  — https://nekos.best/api/v2/<категория> (обязателен User-Agent)
+3) waifu.pics «waifu» — любая аниме-картинка, чтобы ответ не остался без картинки
+"""
 
 import discord
 import aiohttp
 from discord import app_commands
 from discord.ext import commands
 
-# Категория nekos.best для каждой команды
+USER_AGENT = "YachiruBot/1.0 (Discord bot; by delixty)"
+
+# Категории для каждого источника (None = в этом источнике нет такой категории)
 RP_ACTIONS = {
-    "kiss":  {"cat": "kiss",    "emoji": "💋", "title": "Поцелуй",   "text": "целует"},
-    "punch": {"cat": "punch",   "emoji": "👊", "title": "Удар",      "text": "ударяет"},
-    "hug":   {"cat": "hug",     "emoji": "🤗", "title": "Объятие",   "text": "обнимает"},
-    "sex":   {"cat": "blush",   "emoji": "😳", "title": "Шалость",   "text": "делает непристойность с"},
-    "hand":  {"cat": "highfive","emoji": "🖐️", "title": "Дай пять",  "text": "даёт пять"},
-    "slap":  {"cat": "slap",    "emoji": "✋", "title": "Шлепок",    "text": "шлёпает"},
-    "laugh": {"cat": "laugh",   "emoji": "😂", "title": "Смех",      "text": "смеётся над"},
-    "point": {"cat": "poke",    "emoji": "☝️", "title": "Указывает", "text": "указывает пальцем на"},
+    "kiss":  {"emoji": "💋", "title": "Поцелуй",   "text": "целует",                  "waifu": "kiss",     "nekos": "kiss"},
+    "punch": {"emoji": "👊", "title": "Удар",      "text": "ударяет",                 "waifu": "kick",     "nekos": "punch"},
+    "hug":   {"emoji": "🤗", "title": "Объятие",   "text": "обнимает",                "waifu": "hug",      "nekos": "hug"},
+    "sex":   {"emoji": "😳", "title": "Шалость",   "text": "делает непристойность с", "waifu": "blush",    "nekos": "blush"},
+    "hand":  {"emoji": "🖐️", "title": "Дай пять",  "text": "даёт пять",               "waifu": "highfive", "nekos": "highfive"},
+    "slap":  {"emoji": "✋", "title": "Шлепок",     "text": "шлёпает",                 "waifu": "slap",     "nekos": "slap"},
+    "laugh": {"emoji": "😂", "title": "Смех",      "text": "смеётся над",             "waifu": "smile",    "nekos": "laugh"},
+    "point": {"emoji": "☝️", "title": "Указывает", "text": "указывает пальцем на",    "waifu": "poke",     "nekos": "poke"},
 }
 
 
@@ -30,22 +38,51 @@ class RP(commands.Cog):
         if self.session and not self.session.closed:
             self.bot.loop.create_task(self.session.close())
 
-    async def get_gif(self, category: str):
-        """Получить случайную аниме-гифку с nekos.best."""
+    async def _ensure_session(self):
+        if self.session is None or self.session.closed:
+            self.session = aiohttp.ClientSession()
+
+    async def _fetch(self, url: str, mode: str):
+        """Скачать JSON и достать ссылку на картинку.
+        mode: "waifu" -> json["url"]; "nekos" -> json["results"][0]["url"]"""
+        await self._ensure_session()
         try:
-            async with self.session.get(f"https://nekos.best/api/v2/{category}") as r:
+            headers = {"User-Agent": USER_AGENT}
+            async with self.session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)) as r:
                 if r.status == 200:
-                    j = await r.json()
-                    results = j.get("results") or []
-                    if results and results[0].get("url"):
-                        return results[0]["url"]
+                    j = await r.json(content_type=None)
+                    if mode == "waifu":
+                        u = j.get("url")
+                        if u:
+                            return u
+                    elif mode == "nekos":
+                        results = j.get("results") or []
+                        if results and results[0].get("url"):
+                            return results[0]["url"]
         except Exception:
             pass
         return None
 
+    async def get_gif(self, action: str):
+        """Получить аниме-картинку: waifu.pics → nekos.best → любая waifu."""
+        cfg = RP_ACTIONS[action]
+
+        if cfg.get("waifu"):
+            u = await self._fetch(f"https://api.waifu.pics/sfw/{cfg['waifu']}", "waifu")
+            if u:
+                return u
+
+        if cfg.get("nekos"):
+            u = await self._fetch(f"https://nekos.best/api/v2/{cfg['nekos']}", "nekos")
+            if u:
+                return u
+
+        # Гарантированная аниме-картинка, если оба источника недоступны
+        return await self._fetch("https://api.waifu.pics/sfw/waifu", "waifu")
+
     async def run_action(self, inter: discord.Interaction, action: str, target: discord.Member):
         a = RP_ACTIONS[action]
-        gif = await self.get_gif(a["cat"])
+        gif = await self.get_gif(action)
 
         if target and target.id != inter.user.id:
             desc = f"**{inter.user.display_name}** {a['text']} **{target.display_name}** {a['emoji']}"
