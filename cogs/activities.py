@@ -89,45 +89,6 @@ class Activities(commands.Cog):
         core.save_user(uid, ud)
         await inter.response.send_message(embed=discord.Embed(title="⛏️ Шахта", description=msg, color=discord.Color.dark_grey()))
 
-    # ---------- /farm ----------
-    farm = app_commands.Group(name="farm", description="🌾 Ферма")
-    
-    @farm.command(name="plant", description="Посадить семена на ферме")
-    async def farm_plant(self, inter: discord.Interaction):
-        uid = str(inter.user.id)
-        ud = core.get_user(uid)
-        
-        if ud["farm"].get("planted", 0) > 0:
-            return await inter.response.send_message("❌ У тебя уже что-то посажено! Собери урожай через `/farm harvest`.", ephemeral=True)
-            
-        ud["farm"]["planted"] = time.time()
-        core.save_user(uid, ud)
-        core.add_xp(uid, 2)
-        await inter.response.send_message(embed=discord.Embed(title="🌾 Ферма", description="Ты посадил семена! 🌱\nУрожай созреет через 4 часа.", color=discord.Color.green()))
-
-    @farm.command(name="harvest", description="Собрать созревший урожай")
-    async def farm_harvest(self, inter: discord.Interaction):
-        uid = str(inter.user.id)
-        ud = core.get_user(uid)
-        
-        planted = ud["farm"].get("planted", 0)
-        if planted == 0:
-            return await inter.response.send_message("❌ У тебя ничего не посажено! Напиши `/farm plant`.", ephemeral=True)
-            
-        now = time.time()
-        elapsed = now - planted
-        
-        if elapsed < 14400: # 4 часа
-            return await inter.response.send_message(f"⏳ Урожай еще зреет... Осталось **{core.cd(14400 - elapsed)}**.", ephemeral=True)
-            
-        ud["farm"]["planted"] = 0
-        amt = random.randint(3, 8)
-        ud["consumables"]["crop"] = ud.get("consumables", {}).get("crop", 0) + amt
-        
-        core.save_user(uid, ud)
-        core.add_xp(uid, 10)
-        await inter.response.send_message(embed=discord.Embed(title="🌾 Ферма", description=f"Ты собрал **{amt} шт. Урожая**! 🌾\nМожешь продать его через `/sell item:crop`.", color=discord.Color.green()))
-
     # ---------- /case ----------
     case = app_commands.Group(name="case", description="📦 Кейсы")
     
@@ -180,66 +141,6 @@ class Activities(commands.Cog):
                     
         core.save_user(uid, ud)
         await inter.response.send_message(embed=discord.Embed(title="📦 Открытие кейса", description=msg, color=discord.Color.purple()))
-
-    # ---------- /stocks ----------
-    stocks = app_commands.Group(name="stocks", description="📈 Биржа")
-
-    @stocks.command(name="market", description="Посмотреть цены на бирже")
-    async def stocks_market(self, inter: discord.Interaction):
-        st = core.get_stocks()
-        e = discord.Embed(title="📈 Биржа чирукойнов", description="Покупай дёшево, продавай дорого! Цены меняются каждый час.", color=discord.Color.blue())
-        for sn, price in st.items():
-            e.add_field(name=f"📊 {sn}", value=f"Цена: **{core.fmt(price)}** 🪙", inline=True)
-        await inter.response.send_message(embed=e)
-
-    @stocks.command(name="buy", description="Купить акции")
-    @app_commands.describe(stock="Название (например, IT_CORP)", amount="Количество")
-    @app_commands.choices(stock=[
-        app_commands.Choice(name="IT_CORP", value="IT_CORP"),
-        app_commands.Choice(name="GOLD_INC", value="GOLD_INC"),
-        app_commands.Choice(name="FISH_CO", value="FISH_CO"),
-    ])
-    async def stocks_buy(self, inter: discord.Interaction, stock: app_commands.Choice[str], amount: int):
-        uid = str(inter.user.id)
-        if amount <= 0: return await inter.response.send_message("❌ Больше нуля!", ephemeral=True)
-        st = core.get_stocks()
-        price = st[stock.value]
-        cost = price * amount
-        ud = core.get_user(uid)
-        if ud["wallet"] < cost:
-            return await inter.response.send_message(f"❌ Не хватает денег! Нужно {core.fmt(cost)} 🪙", ephemeral=True)
-            
-        ud["wallet"] -= cost
-        ud["stocks"][stock.value] = ud.get("stocks", {}).get(stock.value, 0) + amount
-        core.save_user(uid, ud)
-        
-        await inter.response.send_message(embed=discord.Embed(title="📈 Покупка акций", description=f"Ты купил **{amount}** акций {stock.value} за **{core.fmt(cost)}** 🪙!", color=discord.Color.green()))
-
-    @stocks.command(name="sell", description="Продать акции")
-    @app_commands.describe(stock="Название (например, IT_CORP)", amount="Количество")
-    @app_commands.choices(stock=[
-        app_commands.Choice(name="IT_CORP", value="IT_CORP"),
-        app_commands.Choice(name="GOLD_INC", value="GOLD_INC"),
-        app_commands.Choice(name="FISH_CO", value="FISH_CO"),
-    ])
-    async def stocks_sell(self, inter: discord.Interaction, stock: app_commands.Choice[str], amount: int):
-        uid = str(inter.user.id)
-        if amount <= 0: return await inter.response.send_message("❌ Больше нуля!", ephemeral=True)
-        ud = core.get_user(uid)
-        owned = ud.get("stocks", {}).get(stock.value, 0)
-        
-        if owned < amount:
-            return await inter.response.send_message(f"❌ У тебя нет столько акций! (У тебя: {owned})", ephemeral=True)
-            
-        st = core.get_stocks()
-        price = st[stock.value]
-        revenue = price * amount
-        
-        ud["stocks"][stock.value] -= amount
-        ud["wallet"] += revenue
-        core.save_user(uid, ud)
-        
-        await inter.response.send_message(embed=discord.Embed(title="📉 Продажа акций", description=f"Ты продал **{amount}** акций {stock.value} за **{core.fmt(revenue)}** 🪙!", color=discord.Color.orange()))
 
 
 async def setup(bot):
