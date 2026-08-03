@@ -17,20 +17,46 @@ class KokuBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
-        for ext in ["cogs.economy", "cogs.games", "cogs.shop", "cogs.profile", "cogs.social", "cogs.events", "cogs.activities", "cogs.moderation", "cogs.rp"]:
+        import traceback
+        exts = ["cogs.economy", "cogs.games", "cogs.shop", "cogs.profile",
+                "cogs.social", "cogs.events", "cogs.activities",
+                "cogs.moderation", "cogs.rp"]
+        loaded = 0
+        for ext in exts:
             try:
                 await self.load_extension(ext)
+                loaded += 1
                 print(f"  ✅ Загружен модуль: {ext}")
-            except Exception as e:
-                print(f"  ❌ Ошибка загрузки {ext}: {e}")
-        try:
-            synced = await self.tree.sync()
-            print(f"  ✅ Синхронизировано команд: {len(synced)}")
-        except Exception as e:
-            print(f"  ❌ Ошибка синхронизации: {e}")
+            except Exception:
+                # Полный traceback, чтобы видеть реальную причину сбоя модуля
+                print(f"  ❌ Ошибка загрузки {ext}:")
+                traceback.print_exc()
+        print(f"  📦 Загружено модулей: {loaded}/{len(exts)}")
 
 
 bot = KokuBot()
+
+
+async def sync_commands():
+    """Синхронизирует slash-команды: глобально + мгновенно в каждой гильдии."""
+    import traceback
+    # 1) Глобальная синхронизация (для всех серверов)
+    try:
+        synced = await bot.tree.sync()
+        print(f"  ✅ Глобально синхронизировано команд: {len(synced)}")
+    except Exception:
+        print("  ❌ Ошибка глобальной синхронизации:")
+        traceback.print_exc()
+
+    # 2) Копируем глобальные команды в каждую гильдию и синхронизируем — МГНОВЕННО
+    for guild in bot.guilds:
+        try:
+            bot.tree.copy_global_to(guild=discord.Object(id=guild.id))
+            await bot.tree.sync(guild=discord.Object(id=guild.id))
+        except Exception:
+            pass
+    if bot.guilds:
+        print(f"  ⚡ Команды синхронизированы для {len(bot.guilds)} гильдий (мгновенно)")
 
 
 @bot.event
@@ -41,6 +67,7 @@ async def on_ready():
     print(f"  🪙 Валюта: чирукойны")
     print(f"  ✨ by delixty")
     print("=" * 52)
+    await sync_commands()
 
 
 @bot.event
