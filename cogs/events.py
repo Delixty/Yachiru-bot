@@ -43,14 +43,12 @@ class Events(commands.Cog):
         self.auction_loop.start()
         self.lottery_loop.start()
         self.rare_events_loop.start()
-        self.stocks_loop.start()
 
     def cog_unload(self):
         self.rain_loop.cancel()
         self.auction_loop.cancel()
         self.lottery_loop.cancel()
         self.rare_events_loop.cancel()
-        self.stocks_loop.cancel()
 
     # ---------- ДОЖДЬ ДЕНЕГ ----------
     @tasks.loop(hours=2)
@@ -130,24 +128,6 @@ class Events(commands.Cog):
 
     @rare_events_loop.before_loop
     async def before_rare(self):
-        await self.bot.wait_until_ready()
-        
-    # ---------- БИРЖА (смена цен) ----------
-    @tasks.loop(hours=2)
-    async def stocks_loop(self):
-        data = core.load_data()
-        st = data.get("stocks_market", {"IT_CORP": 100, "GOLD_INC": 500, "FISH_CO": 50})
-        
-        # Меняем цены
-        st["IT_CORP"] = max(10, int(st["IT_CORP"] * random.uniform(0.7, 1.4)))
-        st["GOLD_INC"] = max(100, int(st["GOLD_INC"] * random.uniform(0.8, 1.2)))
-        st["FISH_CO"] = max(5, int(st["FISH_CO"] * random.uniform(0.5, 1.8)))
-        
-        data["stocks_market"] = st
-        core.save_data(data)
-        
-    @stocks_loop.before_loop
-    async def before_stocks(self):
         await self.bot.wait_until_ready()
 
     # ---------- АУКЦИОН (закрытие) ----------
