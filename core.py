@@ -66,7 +66,6 @@ RESOURCES = {
     "ore":  {"name": "🪨 Руда", "desc": "Добыто в шахте", "price": 50},
     "fish": {"name": "🐟 Рыба", "desc": "Поймано на рыбалке", "price": 40},
     "boot": {"name": "🥾 Ботинок", "desc": "Мусор", "price": 1},
-    "crop": {"name": "🌾 Урожай", "desc": "С фермы", "price": 150},
 }
 COLLECTIONS = {
     "demon_sword": {"name": "🟥 Демонический меч", "desc": "Часть коллекции", "price": 15000},
@@ -111,8 +110,6 @@ def default_user():
         "wallet": 0, "bank": 0,
         "xp": 0, "level": 1,
         "quests": {"date": "", "progress": {"work": 0, "bj_win": 0, "buy": 0}, "completed": False},
-        "farm": {"planted": 0},
-        "stocks": {},
         "last_daily": 0, "last_weekly": 0, "last_crime": 0, "last_heist": 0, "last_beg": 0,
         "last_rob": 0, "last_interest": 0, "last_collect": 0, "last_treasure": 0,
         "last_fish": 0, "last_mine": 0, "last_msg": 0,
@@ -318,10 +315,3 @@ def progress_quest(uid, task, amount=1):
         q["progress"][task] = q["progress"].get(task, 0) + amount
         ud["quests"] = q
         save_user(uid, ud)
-
-def get_stocks():
-    data = load_data()
-    if "stocks_market" not in data:
-        data["stocks_market"] = {"IT_CORP": 100, "GOLD_INC": 500, "FISH_CO": 50}
-        save_data(data)
-    return data["stocks_market"]
